@@ -1,0 +1,40 @@
+:host {
+  width: 100%;
+}
+
+.h-100 {
+  height: 100%;
+}
+
+.card {
+  min-height: 85vh;
+}
+
+.card .card-body {
+  padding: 1rem 2.25rem 0rem 2.25rem;
+}
+
+.navbar {
+  border-radius: 8px 8px 0px 0px;
+}
+
+.modal-body-img {
+  text-align: center;
+}
+
+.modal-body-img img {
+  max-height: 100%;
+  max-width: 100%;
+  border-radius: 7px;
+}
+
+sup {
+  color: rgb(236, 30, 30);
+}
+
+.folder-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}

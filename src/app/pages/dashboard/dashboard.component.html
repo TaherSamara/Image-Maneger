@@ -1,0 +1,898 @@
+<div class="card">
+
+  <!----- navbar ----->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light py-4 px-2">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-lg-0">
+          <!----- show style ----->
+          <li *ngIf="totalRecords" class="nav-item text-hover-primary ms-2">
+            <a *ngIf="appearTable" class="nav-link" (click)="showStyle()" role="button" title="Grid layout">
+              <i class="fa-solid fa-table-cells" style="color: rgba(0, 0, 0, 0.55);"></i>
+            </a>
+            <a *ngIf="!appearTable" class="nav-link" (click)="showStyle()" role="button" title="List layout">
+              <i class="fa-solid fa-list-ul" style="color: rgba(0, 0, 0, 0.55);"></i>
+            </a>
+          </li>
+
+          <!----- selected ----->
+          <li class="nav-item" *ngIf="selectedId.length != 0">
+            <a class="nav-link fw-bolder text-hover-primary" role="none"> {{selectedId.length}} selected </a>
+          </li>
+
+          <!----- remove selected ----->
+          <ng-template #Remove let-modal>
+            <div class="modal-header">
+              <h4 class="modal-title fs-3 fw-bolder text-dark">Are you sure to remove?</h4>
+              <button type="button" class="btn-close" aria-label="Close"
+                (click)="modal.dismiss('Cross click')"></button>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="modal.dismiss('cancel click')">Cancel</button>
+              <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2"
+                (click)="removeAllSelected()">
+                <span class="indicator-progress" [style.display]="'block'">
+                  <span>Remove</span>
+                </span>
+              </button>
+              <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2">
+                <span class="indicator-progress" [style.display]="'block'">
+                  <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                  <span>Removing ...</span>
+                </span>
+              </button>
+            </div>
+          </ng-template>
+          <li class="nav-item text-hover-primary" *ngIf="selectedId.length != 0" title="Remove">
+            <a class="nav-link text-hover-primary" (click)="openSm(Remove)" role="button">
+              <i class="fas fa-trash" style="color: rgba(0, 0, 0, 0.55);"></i>
+              remove
+            </a>
+          </li>
+
+          <!----- move selected ----->
+          <ng-template #MoveTo let-modal>
+            <div class="modal-header">
+              <h4 class="modal-title fs-3 fw-bolder text-dark">Move to</h4>
+              <button type="button" class="btn-close" aria-label="Close"
+                (click)="modal.dismiss('Cross click')"></button>
+            </div>
+            <div class="modal-body">
+              <form [formGroup]="FileForm">
+                <div class="leftside">
+                  <div class="row">
+                    <div class="col-6 mb-5" *ngFor="let folder of Folders">
+                      <ul class="list-group" role="button">
+                        <li class="list-group-item list-group-item-action list-group-item-secondary"
+                          style="height: 6vh;">
+                          <label class="text-dark fw-bolder folder-name text-start" for="{{folder.id}}">
+                            <i class=" far fa-folder-open folder-open fs-5 me-2 mt-2"></i> {{folder.name}}
+                          </label>
+                          <input class="float-end mt-3" type="radio" formControlName="moveTo" name="moveTo"
+                            value="{{folder.id}}" id="{{folder.id}}">
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="modal.dismiss('cancel click')">Cancel</button>
+              <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                (click)="moveAllSelected(FileForm.controls['moveTo'].value)">
+                <span class="indicator-progress" [style.display]="'block'">
+                  <span>Move</span>
+                </span>
+              </button>
+              <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                <span class="indicator-progress" [style.display]="'block'">
+                  <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                  <span>Moving ...</span>
+                </span>
+              </button>
+            </div>
+          </ng-template>
+          <li class="nav-item text-hover-primary" *ngIf="selectedId.length != 0" title="Move">
+            <a class="nav-link text-hover-primary" (click)="openVerticallyCentered(MoveTo)" role="button">
+              <i class="fa-solid fa-share-from-square" style="color: rgba(0, 0, 0, 0.55);"></i>
+              move
+            </a>
+          </li>
+        </ul>
+
+        <!----- search ----->
+        <div class="d-flex align-items-center">
+          <span class="svg-icon svg-icon-1 position-absolute ms-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect opacity="0.5" x="17.0365" y="15.1223" width="8.15546" height="2" rx="1"
+                transform="rotate(45 17.0365 15.1223)" fill="currentColor"></rect>
+              <path
+                d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z"
+                fill="currentColor"></path>
+            </svg>
+          </span>
+          <input type="text" [(ngModel)]="searchText" (keyup)="fetchAllFiles(1)" (keyup)="fetchFolders(1)"
+            (keyup)="fetchImages(1)" class="form-control ps-14 me-2 h-25" placeholder="Search by name...">
+          <div ngbDropdown class="dropdown">
+            <button ngbDropdownToggle class="btn btn-sm btn-secondary btn-color-primary" type="button"
+              id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Add
+            </button>
+            <div ngbDropdownMenu class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-primary"
+                (click)="openVerticallyCentered(AddFolder)" title="Folder">Folder
+              </a>
+              <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-primary"
+                (click)="openVerticallyCentered(AddImage)" title="Image">Image
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <!------------------------------------------- Grid ------------------------------------------->
+
+  <!-- begin::Grid container -->
+  <ng-container *ngIf="!appearTable">
+    <!-- ------- Flders ------- -->
+    <span class="card-label fw-bold fs-6 pt-4 ps-5" *ngIf="!(isLoading$ | async) && totalRecordsfolders">{{totalRecordsfolders}} of
+      {{totalCountfolders}} Folders</span>
+    <span class="card-label fw-bold fs-6 pt-4 ps-5" *ngIf="(isLoading$ | async)">
+      <ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+        [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader>
+    </span>
+    <div *ngIf="!(isLoading$ | async)">
+      <div class="row m-5">
+        <div class="col-2 mb-5" *ngFor="let folder of Folders">
+          <ul class="list-group" role="button">
+            <li class="list-group-item list-group-item-action list-group-item-secondary" style="height: 6vh;">
+              <label class="text-dark fw-bolder folder-name text-start" [routerLink]="['/folders', folder.id]">
+                <i class=" far fa-folder-open folder-open fs-5 me-2 mt-2"></i>
+                {{folder.name}} <i *ngIf="folder.starred === true"
+                  class="fa-sharp fa-solid fa-star text-dark fs-8 ps-1"></i>
+              </label>
+              <div ngbDropdown class="dropdown float-end">
+                <button ngbDropdownToggle class="btn btn-sm" type="button" id="dropdownMenuButton"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <!-- <i class="fa-solid fa-ellipsis-vertical fs-15 mb-2 ms-3"></i> -->
+                </button>
+                <div ngbDropdownMenu class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <!-- ------- Remane ------- -->
+                  <ng-template #Rename let-modal>
+                    <div class="modal-header">
+                      <h4 class="modal-title fs-3 fw-bolder text-dark">Edit Folder Name</h4>
+                      <button type="button" class="btn-close" aria-label="Close"
+                        (click)="modal.dismiss('Cross click')"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form [formGroup]="FileForm">
+                        <div class="card-body">
+                          <div class="fv-row">
+                            <label class="form-label fs-6 fw-bolder">Folder Name<sup>*</sup></label>
+                            <input class="form-control form-control-lg form-control-solid" type="text" name="newName"
+                              formControlName="newName" autocomplete="off" [ngClass]="{
+                        'is-invalid': submitted && FileForm.controls['newName'].invalid,
+                        'is-valid': submitted && FileForm.controls['newName'].valid
+                      }" />
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="modal.dismiss('cancel click')">Cancel</button>
+                      <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                        (click)="rename(folder.id)">
+                        <span class="indicator-progress" [style.display]="'block'">
+                          <span>Update</span>
+                        </span>
+                      </button>
+                      <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                        <span class="indicator-progress" [style.display]="'block'">
+                          <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                          <span>Updating ...</span>
+                        </span>
+                      </button>
+                    </div>
+                  </ng-template>
+                  <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-primary"
+                    (click)="openVerticallyCentered(Rename)" (click)="edit(folder.id)" title="Rename">
+                    <i class="fas fa-pen icon btn-active-color-primary"></i>&nbsp;&nbsp;Rename
+                  </a>
+
+                  <!-- ------- Remove ------- -->
+                  <ng-template #Remove let-modal>
+                    <div class="modal-header">
+                      <h4 class="modal-title fs-3 fw-bolder text-dark">Are you sure to remove?</h4>
+                      <button type="button" class="btn-close" aria-label="Close"
+                        (click)="modal.dismiss('Cross click')"></button>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="modal.dismiss('cancel click')">Cancel</button>
+                      <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2"
+                        (click)="remove(folder.id)">
+                        <span class="indicator-progress" [style.display]="'block'">
+                          <span>Remove</span>
+                        </span>
+                      </button>
+                      <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2">
+                        <span class="indicator-progress" [style.display]="'block'">
+                          <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                          <span>Removing ...</span>
+                        </span>
+                      </button>
+                    </div>
+                  </ng-template>
+                  <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-danger"
+                    (click)="openSm(Remove)" title="Remove">
+                    <i class="fas fa-trash icon btn-active-color-danger"></i>&nbsp;&nbsp;Remove
+                  </a>
+
+                  <!-- ------- Move ------- -->
+                  <ng-template #MoveTo let-modal>
+                    <div class="modal-header">
+                      <h4 class="modal-title fs-3 fw-bolder text-dark">Move to</h4>
+                      <button type="button" class="btn-close" aria-label="Close"
+                        (click)="modal.dismiss('Cross click')"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form [formGroup]="FileForm">
+                        <div class="leftside">
+                          <div class="row">
+                            <div class="col-6 mb-5" *ngFor="let folder of Folders">
+                              <ul class="list-group" role="button">
+                                <li class="list-group-item list-group-item-action list-group-item-secondary"
+                                  style="height: 6vh;">
+                                  <label class="text-dark fw-bolder folder-name text-start" for="{{folder.id}}">
+                                    <i class=" far fa-folder-open folder-open fs-5 me-2 mt-2"></i> {{folder.name}}
+                                  </label>
+                                  <input class="float-end mt-3" type="radio" formControlName="moveTo" name="moveTo"
+                                    value="{{folder.id}}" id="{{folder.id}}">
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="modal.dismiss('cancel click')">Cancel</button>
+                      <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                        (click)="moveTo(folder.id, FileForm.controls['moveTo'].value)">
+                        <span class="indicator-progress" [style.display]="'block'">
+                          <span>Move</span>
+                        </span>
+                      </button>
+                      <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                        <span class="indicator-progress" [style.display]="'block'">
+                          <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                          <span>Moving ...</span>
+                        </span>
+                      </button>
+                    </div>
+                  </ng-template>
+                  <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-success"
+                    (click)="openVerticallyCentered(MoveTo)" title="Move">
+                    <i class="fa-solid fa-share-from-square move-to-icon btn-active-color-success"></i>&nbsp;&nbsp;Move
+                  </a>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="(isLoading$ | async)">
+      <div class="row m-5">
+        <div class="col-2 mb-5" *ngFor="let  number of [].constructor(+12)">
+          <ngx-skeleton-loader count="1" appearance="circle" animation="progress-dark"
+            [theme]="{width:'31vh',height:'40px','border-radius':'5px','margin':'0'}"></ngx-skeleton-loader>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------- Images ------- -->
+    <span class="card-label fw-bold fs-6 pt-4 ps-5" *ngIf="!(isLoading$ | async) && totalRecordsimages">{{totalRecordsimages}} of
+      {{totalCountimages}} Images</span>
+    <span class="card-label fw-bold fs-6 pt-4 ps-5" *ngIf="(isLoading$ | async)">
+      <ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+        [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader>
+    </span>
+    <div *ngIf="!(isLoading$ | async)">
+      <div class="row m-5">
+        <div class="col-2"
+          *ngFor="let img of Images | paginate: { itemsPerPage: size, currentPage: page, totalItems: totalCount }">
+          <mat-card class="example-card mb-5" style="background-color: #f0f0f0;">
+            <mat-card-header role="button">
+              <mat-card-title-group>
+                <mat-card-title class="text-dark fw-bolder text-center bold me-5">
+                  {{ img.name.includes('.') ? img.name
+                  .split('.').slice(0, -1).join('.') : img.name }}
+                  <i *ngIf="img.starred === true" class="fa-sharp fa-solid fa-star text-dark fs-8 ps-1"></i>
+                  <div ngbDropdown class="dropdown">
+                    <button ngbDropdownToggle class="btn btn-sm" type="button" id="dropdownMenuButton"
+                      data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    </button>
+                    <div ngbDropdownMenu class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                      <!-- ------- Remane ------- -->
+                      <ng-template #Rename let-modal>
+                        <div class="modal-header">
+                          <h4 class="modal-title fs-3 fw-bolder text-dark">Edit Image Name</h4>
+                          <button type="button" class="btn-close" aria-label="Close"
+                            (click)="modal.dismiss('Cross click')"></button>
+                        </div>
+                        <div class="modal-body">
+                          <form [formGroup]="FileForm">
+                            <div class="card-body">
+                              <div class="fv-row">
+                                <label class="form-label fs-6 fw-bolder">Image Name<sup>*</sup></label>
+                                <input class="form-control form-control-lg form-control-solid" type="text"
+                                  name="newName" formControlName="newName" autocomplete="off" [ngClass]="{
+                            'is-invalid': submitted && FileForm.controls['newName'].invalid,
+                            'is-valid': submitted && FileForm.controls['newName'].valid
+                          }" />
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-sm btn-outline-secondary"
+                            (click)="modal.dismiss('cancel click')">Cancel</button>
+                          <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                            (click)="rename(img.id)">
+                            <span class="indicator-progress" [style.display]="'block'">
+                              <span>Update</span>
+                            </span>
+                          </button>
+                          <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                            <span class="indicator-progress" [style.display]="'block'">
+                              <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                              <span>Updating ...</span>
+                            </span>
+                          </button>
+                        </div>
+                      </ng-template>
+                      <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-primary"
+                        (click)="openVerticallyCentered(Rename)" (click)="edit(img.id)" title="Rename">
+                        <i class="fas fa-pen icon btn-active-color-primary"></i>&nbsp;&nbsp;Rename
+                      </a>
+
+                      <!-- ------- Remove ------- -->
+                      <ng-template #Remove let-modal>
+                        <div class="modal-header">
+                          <h4 class="modal-title fs-3 fw-bolder text-dark">Are you sure to remove?</h4>
+                          <button type="button" class="btn-close" aria-label="Close"
+                            (click)="modal.dismiss('Cross click')"></button>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-sm btn-outline-secondary"
+                            (click)="modal.dismiss('cancel click')">Cancel</button>
+                          <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2"
+                            (click)="remove(img.id)">
+                            <span class="indicator-progress" [style.display]="'block'">
+                              <span>Remove</span>
+                            </span>
+                          </button>
+                          <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2">
+                            <span class="indicator-progress" [style.display]="'block'">
+                              <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                              <span>Removing ...</span>
+                            </span>
+                          </button>
+                        </div>
+                      </ng-template>
+                      <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-danger"
+                        (click)="openSm(Remove)" title="Remove">
+                        <i class="fas fa-trash icon btn-active-color-danger"></i>&nbsp;&nbsp;Remove
+                      </a>
+
+                      <!-- ------- Move ------- -->
+                      <ng-template #MoveTo let-modal>
+                        <div class="modal-header">
+                          <h4 class="modal-title fs-3 fw-bolder text-dark">Move to</h4>
+                          <button type="button" class="btn-close" aria-label="Close"
+                            (click)="modal.dismiss('Cross click')"></button>
+                        </div>
+                        <div class="modal-body">
+                          <form [formGroup]="FileForm">
+                            <div class="leftside">
+                              <div class="row">
+                                <div class="col-6 mb-5" *ngFor="let folder of Folders">
+                                  <ul class="list-group" role="button">
+                                    <li class="list-group-item list-group-item-action list-group-item-secondary"
+                                      style="height: 6vh;">
+                                      <label class="text-dark fw-bolder folder-name text-start" for="{{folder.id}}">
+                                        <i class=" far fa-folder-open folder-open fs-5 me-2 mt-2"></i> {{folder.name}}
+                                      </label>
+                                      <input class="float-end mt-3" type="radio" formControlName="moveTo" name="moveTo"
+                                        value="{{folder.id}}" id="{{folder.id}}">
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-sm btn-outline-secondary"
+                            (click)="modal.dismiss('cancel click')">Cancel</button>
+                          <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                            (click)="moveTo(img.id, FileForm.controls['moveTo'].value)">
+                            <span class="indicator-progress" [style.display]="'block'">
+                              <span>Move</span>
+                            </span>
+                          </button>
+                          <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                            <span class="indicator-progress" [style.display]="'block'">
+                              <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                              <span>Moving ...</span>
+                            </span>
+                          </button>
+                        </div>
+                      </ng-template>
+                      <a ngbDropdownItem class="dropdown-item btn btn-sm fw-bold text-muted text-hover-success"
+                        (click)="openVerticallyCentered(MoveTo)" title="Move">
+                        <i
+                          class="fa-solid fa-share-from-square move-to-icon btn-active-color-success"></i>&nbsp;&nbsp;Move
+                      </a>
+                    </div>
+                  </div>
+                </mat-card-title>
+                <img (click)="openXl(Image)" class="rounded mb-5" mat-card-md-image [src]="PicPath+img.pic_name">
+              </mat-card-title-group>
+            </mat-card-header>
+          </mat-card>
+          <ng-template #Image let-modal>
+            <div class="modal-header">
+              <h4 class="modal-title fs-3 fw-bolder text-dark"> {{ img.name.split('.').slice(0, -1).join('.') }}
+              </h4>
+              <button type="button" class="btn-close" aria-label="Close"
+                (click)="modal.dismiss('Cross click')"></button>
+            </div>
+            <div class="modal-body modal-body-img">
+              <img [src]="PicPath+img.pic_name" alt="img">
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="(isLoading$ | async)">
+      <div class="row m-5">
+        <div class="col-2 mb-5" *ngFor="let  number of [].constructor(+12)">
+          <ngx-skeleton-loader count="1" appearance="circle" animation="progress-dark"
+            [theme]="{width:'31vh',height:'18vh','border-radius':'5px','margin':'0'}"></ngx-skeleton-loader>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+  <!-- begin::Grid container -->
+
+  <!------------------------------------------- List ------------------------------------------->
+
+  <!-- begin::List container -->
+  <ng-container *ngIf="appearTable">
+    <span class="card-label fw-bold fs-6 pt-4 ps-5" *ngIf="!(isLoading$ | async) && totalRecords">{{totalRecords}} of
+      {{totalCount}} Files</span>
+    <span class="card-label fw-bold fs-6 pt-4 ps-5" *ngIf="(isLoading$ | async)">
+      <ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+        [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader>
+    </span>
+
+    <!-- begin::Body -->
+    <div class="card-body" *ngIf="!(isLoading$ | async) && totalRecords">
+      <!-- begin::Table -->
+      <table
+        class="table-responsive table border table table-rounded table-hover table-row-bordered align-middle text-center gy-4 gs-4">
+        <thead>
+          <tr class="fw-bolder text-gray-600">
+            <th class="w-25px">
+              <div class="form-check form-check-sm form-check-custom form-check-solid">
+                <input class="form-check-input" type="checkbox" value="1" title="Select all files on screen"
+                  data-kt-check="true" data-kt-check-target=".widget-9-check" (change)="checkAll($event)" />
+              </div>
+            </th>
+            <th class="col-3 text-start"> Name </th>
+            <th class="col-3">Owner</th>
+            <th class="col-3">File size</th>
+            <th class="col-3 text-end">Actions</th>
+          </tr>
+        </thead>
+        <!-- begin::Table body -->
+        <tbody>
+          <tr *ngFor="let file of Files | paginate: { itemsPerPage: size, currentPage: page, totalItems: totalCount }">
+            <!-- Checkbox -->
+            <td>
+              <div class="form-check form-check-sm form-check-custom form-check-solid">
+                <input class="form-check-input widget-9-check" type="checkbox" [value]="file.id"
+                  (change)="getCheckboxValues($event, file.id)" />
+              </div>
+            </td>
+            <!-- Name -->
+            <td (click)="folderOrImage(file.type,Image,file.id)">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-45px me-5">
+                  <img *ngIf="file.type == 2" [src]="PicPath+file.pic_name" alt="img" />
+                  <i *ngIf="file.type == 1" class="far fa-folder-open folder-open icon-hover ms-1"
+                    style="font-size: 5vh;"></i>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <a *ngIf="file.type == 1" class="text-dark fw-bold text-hover-primary fs-6"
+                    title="Folder: {{ file.name }}" role="button"> {{ file.name }}
+                    <i *ngIf="file.starred === true" class="fa-sharp fa-solid fa-star text-dark fs-8 ps-1"></i>
+                  </a>
+                  <a *ngIf="file.type == 2" class="text-dark fw-bold text-hover-primary fs-6"
+                    title="Image: {{ file.name }}" role="button"> {{ file.name.includes('.') ? file.name
+                    .split('.').slice(0, -1).join('.') : file.name }}
+                    <i *ngIf="file.starred === true" class="fa-sharp fa-solid fa-star text-dark fs-8 ps-1"></i>
+                  </a>
+                </div>
+              </div>
+            </td>
+            <!-- Owner -->
+            <td (click)="folderOrImage(file.type,Image,file.id)">
+              <a class="text-dark fw-bold text-hover-primary d-block fs-6" title="Owned by me" role="none"> me
+              </a>
+            </td>
+            <!-- File size -->
+            <td (click)="folderOrImage(file.type,Image,file.id)">
+              <a *ngIf="file.type == 1" class="text-dark fw-bold text-hover-primary d-block fs-3" role="none">-</a>
+              <a *ngIf="file.type == 2 && file.pic_size/1000000>1000"
+                class="text-dark fw-bold text-hover-primary d-block fs-6" role="none"
+                title="Size: {{file.pic_size/1000000 | number: '1.0-0'}} MB"> {{file.pic_size/1000000 | number:
+                '1.0-0'}} MB</a>
+              <a *ngIf="file.type == 2 && file.pic_size/1000000<1000"
+                class="text-dark fw-bold text-hover-primary d-block fs-6" role="none"
+                title="Size: {{file.pic_size/1000 | number: '1.0-0'}} KB"> {{file.pic_size/1000 | number: '1.0-0'}}
+                KB</a>
+            </td>
+            <!-- Actions -->
+            <td>
+              <div class="d-flex justify-content-end flex-shrink-0">
+                <ng-template #Rename let-modal>
+                  <div class="modal-header">
+                    <h4 class="modal-title fs-3 fw-bolder text-dark">Edit Folder Name</h4>
+                    <button type="button" class="btn-close" aria-label="Close"
+                      (click)="modal.dismiss('Cross click')"></button>
+                  </div>
+                  <div class="modal-body">
+                    <form [formGroup]="FileForm">
+                      <div class="card-body">
+                        <div class="fv-row">
+                          <label class="form-label fs-6 fw-bolder">Folder Name<sup>*</sup></label>
+                          <input class="form-control form-control-lg form-control-solid" type="text" name="newName"
+                            formControlName="newName" autocomplete="off" [ngClass]="{
+                        'is-invalid': submitted && FileForm.controls['newName'].invalid,
+                        'is-valid': submitted && FileForm.controls['newName'].valid
+                      }" />
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      (click)="modal.dismiss('cancel click')">Cancel</button>
+                    <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                      (click)="rename(file.id)">
+                      <span class="indicator-progress" [style.display]="'block'">
+                        <span>Update</span>
+                      </span>
+                    </button>
+                    <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                      <span class="indicator-progress" [style.display]="'block'">
+                        <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                        <span>Updating ...</span>
+                      </span>
+                    </button>
+                  </div>
+                </ng-template>
+                <a class="btn btn-icon btn-bg-light btn-active-color-primary btn-smme-1" title="Rename"
+                  (click)="openVerticallyCentered(Rename)" (click)="edit(file.id)">
+                  <i class="fas fa-pen icon"></i>
+                </a>
+
+                <ng-template #Remove let-modal>
+                  <div class="modal-header">
+                    <h4 class="modal-title fs-3 fw-bolder text-dark">Are you sure to remove?</h4>
+                    <button type="button" class="btn-close" aria-label="Close"
+                      (click)="modal.dismiss('Cross click')"></button>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      (click)="modal.dismiss('cancel click')">Cancel</button>
+                    <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2"
+                      (click)="remove(file.id)">
+                      <span class="indicator-progress" [style.display]="'block'">
+                        <span>Remove</span>
+                      </span>
+                    </button>
+                    <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-danger ms-2">
+                      <span class="indicator-progress" [style.display]="'block'">
+                        <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                        <span>Removing ...</span>
+                      </span>
+                    </button>
+                  </div>
+                </ng-template>
+                <a class="btn btn-icon btn-bg-light btn-active-color-danger btn-smme-1 ms-2" title="Remove"
+                  (click)="openSm(Remove)">
+                  <i class="fas fa-trash icon"></i>
+                </a>
+
+                <!-- ------- Move ------- -->
+                <ng-template #MoveTo let-modal>
+                  <div class="modal-header">
+                    <h4 class="modal-title fs-3 fw-bolder text-dark">Move to</h4>
+                    <button type="button" class="btn-close" aria-label="Close"
+                      (click)="modal.dismiss('Cross click')"></button>
+                  </div>
+                  <div class="modal-body">
+                    <form [formGroup]="FileForm">
+                      <div class="leftside">
+                        <div class="row">
+                          <div class="col-6 mb-5" *ngFor="let folder of Folders">
+                            <ul class="list-group" role="button">
+                              <li class="list-group-item list-group-item-action list-group-item-secondary"
+                                style="height: 6vh;">
+                                <label class="text-dark fw-bolder folder-name text-start" for="{{folder.id}}">
+                                  <i class=" far fa-folder-open folder-open fs-5 me-2 mt-2"></i> {{folder.name}}
+                                </label>
+                                <input class="float-end mt-3" type="radio" formControlName="moveTo" name="moveTo"
+                                  value="{{folder.id}}" id="{{folder.id}}">
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      (click)="modal.dismiss('cancel click')">Cancel</button>
+                    <button type="submit" *ngIf="!(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2"
+                      (click)="moveTo(file.id, FileForm.controls['moveTo'].value)">
+                      <span class="indicator-progress" [style.display]="'block'">
+                        <span>Move</span>
+                      </span>
+                    </button>
+                    <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+                      <span class="indicator-progress" [style.display]="'block'">
+                        <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                        <span>Moving ...</span>
+                      </span>
+                    </button>
+                  </div>
+                </ng-template>
+                <a class="btn btn-icon btn-bg-light btn-active-color-success btn-smme-1 ms-2" title="Move"
+                  (click)="openVerticallyCentered(MoveTo)">
+                  <i class="fa-solid fa-share-from-square"></i>
+                </a>
+              </div>
+            </td>
+            <ng-template #Image let-modal>
+              <div class="modal-header bg-light">
+                <div class="card-body">
+                  <h5 class="card-title fw-bolder">{{ file.name.includes('.') ?
+                    file.name.split('.').slice(0,-1).join('.') : file.name }}</h5>
+                  <p class="card-text">{{ file.description }}</p>
+                </div>
+                <button type="button" class="btn-close" aria-label="Close"
+                  (click)="modal.dismiss('Cross click')"></button>
+              </div>
+              <div class="modal-body modal-body-img">
+                <img [src]="PicPath+file.pic_name" alt="img">
+              </div>
+            </ng-template>
+          </tr>
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+    </div>
+
+    <!-- begin::Louder -->
+    <div class="card-body" *ngIf="(isLoading$ | async)">
+      <table class="table border table table-rounded table-hover table-row-bordered align-middle text-center gy-4 gs-4">
+        <thead>
+          <tr class="fw-bolder">
+            <th class="w-25px">
+              <div class="form-check form-check-sm form-check-custom form-check-solid">
+                <input class="form-check-input" type="checkbox" value="1" data-kt-check="true"
+                  data-kt-check-target=".widget-9-check" />
+              </div>
+            </th>
+            <th class="col-2 text-start"><ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+                [theme]="{width:'100px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader></th>
+            <th class="col-2"><ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+                [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader></th>
+            <th class="col-2"><ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+                [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader></th>
+            <th class="col-2"><ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+                [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader></th>
+            <th class="col-2"><ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+                [theme]="{width:'110px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader></th>
+            <th class="col-2 text-end"><ngx-skeleton-loader count="1" appearance="line" animation="progress-dark"
+                [theme]="{width:'70px',height:'15px','border-radius':'3px','margin':'0'}"></ngx-skeleton-loader></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let number of [].constructor(+size)">
+            <!-- Checkbox -->
+            <td>
+              <div class="form-check form-check-sm form-check-custom form-check-solid">
+                <input class="form-check-input" type="checkbox" value="1" data-kt-check="true"
+                  data-kt-check-target=".widget-9-check" />
+              </div>
+            </td>
+            <!-- Name -->
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-45px me-5">
+                  <ngx-skeleton-loader count="1" appearance="circle" animation="progress-dark"
+                    [theme]="{width:'39px',height:'39px','border-radius':'5px','margin':'0'}"></ngx-skeleton-loader>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bolder text-hover-primary fs-6 w-150px"><ngx-skeleton-loader count="1"
+                      appearance="line" animation="progress-dark"
+                      [theme]="{height:'17px','border-radius':'3px','margin-bottom':'3px'}"></ngx-skeleton-loader></span>
+                </div>
+              </div>
+            </td>
+            <!-- Owner -->
+            <td>
+              <span class="text-dark fw-bolder text-hover-primary fs-6 w-150px"><ngx-skeleton-loader count="1"
+                  appearance="line" animation="progress-dark"
+                  [theme]="{width:'100px',height:'17px','border-radius':'3px','margin-bottom':'3px'}"></ngx-skeleton-loader></span>
+            </td>
+            <!-- File size -->
+            <td>
+              <span class="text-dark fw-bolder text-hover-primary fs-6 w-150px"><ngx-skeleton-loader count="1"
+                  appearance="line" animation="progress-dark"
+                  [theme]="{width:'100px',height:'17px','border-radius':'3px','margin-bottom':'3px'}"></ngx-skeleton-loader></span>
+            </td>
+            <!-- Last modified -->
+            <td>
+              <span class="text-dark fw-bolder text-hover-primary fs-6 w-150px"><ngx-skeleton-loader count="1"
+                  appearance="line" animation="progress-dark"
+                  [theme]="{width:'20vh',height:'17px','border-radius':'3px','margin-bottom':'3px'}"></ngx-skeleton-loader></span>
+            </td>
+            <!-- Created -->
+            <td>
+              <span class="text-dark fw-bolder text-hover-primary fs-6 w-150px"><ngx-skeleton-loader count="1"
+                  appearance="line" animation="progress-dark"
+                  [theme]="{width:'20vh',height:'17px','border-radius':'3px','margin-bottom':'3px'}"></ngx-skeleton-loader></span>
+            </td>
+            <!-- Actions -->
+            <td>
+              <div class="d-flex justify-content-end flex-shrink-0">
+                <ngx-skeleton-loader count="1" appearance="circle" animation="progress-dark"
+                  [theme]="{width:'41px',height:'38px','border-radius':'5px','margin':'0'}"></ngx-skeleton-loader>
+                <ngx-skeleton-loader class="ms-3" count="1" appearance="circle" animation="progress-dark"
+                  [theme]="{width:'41px',height:'38px','border-radius':'5px','margin':'0'}"></ngx-skeleton-loader>
+                <ngx-skeleton-loader class="ms-3" count="1" appearance="circle" animation="progress-dark"
+                  [theme]="{width:'41px',height:'38px','border-radius':'5px','margin':'0'}"></ngx-skeleton-loader>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- end::Louder -->
+
+    <pagination-controls *ngIf="totalRecords" class="pagination" previousLabel="pre" nextLabel="next"
+      (pageChange)="fetchAllFiles($event)">
+    </pagination-controls>
+    <!-- end::Body -->
+  </ng-container>
+  <!-- end::List container -->
+
+  <div style="margin-top: 25vh;" *ngIf="totalRecords===0">
+    <!--begin::Alert-->
+    <div class="p-3 bg-white rounded alert alert-dismissible d-flex flex-center flex-column py-10 px-10 px-lg-20 mb-10">
+      <!--begin::Icon-->
+      <span class="svg-icon svg-icon-5tx svg-icon-warning mb-5">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect opacity="0.3" x="2" y="2" width="20" height="20" rx="10" fill="currentColor"></rect>
+          <rect x="11" y="14" width="7" height="2" rx="1" transform="rotate(-90 11 14)" fill="currentColor"></rect>
+          <rect x="11" y="17" width="2" height="2" rx="1" transform="rotate(-90 11 17)" fill="currentColor"></rect>
+        </svg>
+      </span>
+      <!--end::Icon-->
+      <!--begin::Wrapper-->
+      <div class="text-center">
+        <!--begin::Title-->
+        <h1 class="fw-bold mb-5">There is no folders or files</h1>
+        <!--end::Title-->
+      </div>
+      <!--end::Wrapper-->
+    </div>
+    <!--end::Alert-->
+  </div>
+
+</div>
+<ng-template #AddFolder let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title fs-3 fw-bolder text-dark">Add New Folder</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="FileForm">
+      <div class="fv-row">
+        <label class="form-label fs-6 fw-bolder">Folder Name<sup>*</sup></label>
+        <input class="form-control form-control-lg form-control-solid" type="text" name="name" formControlName="name"
+          autocomplete="off" [ngClass]="{
+        'is-invalid': submitted && FileForm.controls['name'].invalid,
+        'is-valid': submitted && FileForm.controls['name'].valid
+      }" />
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-sm btn-outline-secondary"
+      (click)="modal.dismiss('cancel click')">Cancel</button>
+    <button type="submit" *ngIf="!(isCrudLoading$ | async)" (click)="addFolder(FileForm.controls['name'].value)"
+      class="btn btn-sm btn-primary ms-2">
+      <span class="indicator-progress" [style.display]="'block'">
+        <span>Add folder</span>
+      </span>
+    </button>
+    <button type="submit" *ngIf="(isCrudLoading$ | async)" class="btn btn-sm btn-primary ms-2">
+      <span class="indicator-progress" [style.display]="'block'">
+        <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+        <span>Adding folder ...</span>
+      </span>
+    </button>
+  </div>
+</ng-template>
+<ng-template #AddImage let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title fs-3 fw-bolder text-dark">Add New Image</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="FileForm">
+      <div class="fv-row">
+        <label class="form-label fs-6 fw-bolder">Description <sub
+            class="text-muted ms-1"><small>option</small></sub></label>
+        <input class="form-control form-control-lg form-control-solid" type="text" name="foldername"
+          formControlName="description" />
+      </div>
+      <div class="fv-row mt-5">
+        <input [hidden]="true" #fileInput class="form-control text-box single-line password"
+          (change)="onChange(fileInput.files)" multiple formControlName="name" type="file" [ngClass]="{ 'is-invalid': submitted && FileForm.controls['name'].invalid,
+                          'is-valid': submitted && FileForm.controls['name'].valid }" />
+        <button type="button" class="btn btn-sm btn-primary btn-sm" (click)="fileInput.click()"
+          title="Click to add a image">Pick Image</button><sup class="fs-5 fw-bolder ms-1">*</sup>
+        <div *ngIf="submitted && FileForm.controls['name'].errors" role="alert">
+          <div style="color: rgb(199, 31, 31);" *ngIf="FileForm.controls['name'].errors['required']">
+            Image is required</div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-sm btn-outline-secondary"
+      (click)="modal.dismiss('cancel click')">Cancel</button>
+    <button type="submit" (click)="modal.close('Ok click')" *ngIf="!(isCrudLoading$ | async)" (click)="addImage()"
+      class="btn btn-sm btn-primary ms-2">
+      <span class="indicator-progress" [style.display]="'block'">
+        <span>Add image</span>
+      </span>
+    </button>
+    <button type="submit" (click)="modal.close('Ok click')" *ngIf="(isCrudLoading$ | async)" (click)="addImage()"
+      class="btn btn-sm btn-primary ms-2">
+      <span class="indicator-progress" [style.display]="'block'">
+        <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+        <span>Adding image ...</span>
+      </span>
+    </button>
+  </div>
+</ng-template>

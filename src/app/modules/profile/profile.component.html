@@ -1,0 +1,198 @@
+<ng-template #content let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title fs-3 fw-bolder text-dark">Edit my profile</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="UserForm">
+      <div class="card-body">
+        <div class="fv-row mb-6">
+          <label class="form-label fs-6 fw-bolder">Full Name</label>
+          <input class="form-control form-control-lg form-control-solid" type="text" name="fullname"
+            formControlName="fullname" autocomplete="off" [ngClass]="{
+      'is-invalid': submitted && UserForm.controls['fullname'].invalid,
+      'is-valid': submitted && UserForm.controls['fullname'].valid
+    }" />
+        </div>
+        <div class="fv-row mb-6">
+          <label class="form-label fs-6 fw-bolder">User Name</label>
+          <input class="form-control form-control-lg form-control-solid" type="text" name="username"
+            formControlName="username" autocomplete="off" [ngClass]="{
+      'is-invalid': submitted && UserForm.controls['username'].invalid,
+      'is-valid': submitted && UserForm.controls['username'].valid
+    }" />
+        </div>
+        <div class="fv-row mb-6">
+          <label class="form-label fs-6 fw-bolder">Email</label>
+          <input class="form-control form-control-lg form-control-solid" type="text" name="email"
+            formControlName="email" autocomplete="off" [ngClass]="{
+      'is-invalid': submitted && UserForm.controls['email'].invalid,
+      'is-valid': submitted && UserForm.controls['email'].valid
+    }" />
+        </div>
+        <div class="fv-row">
+          <label class="form-label fs-6 fw-bolder">Phone</label>
+          <input class="form-control form-control-lg form-control-solid" type="text" name="phone"
+            formControlName="phone" autocomplete="off" [ngClass]="{
+      'is-invalid': submitted && UserForm.controls['phone'].invalid,
+      'is-valid': submitted && UserForm.controls['phone'].valid
+    }" />
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-sm btn-outline-secondary"
+      (click)="modal.dismiss('cancel click')">Cancel</button>
+    <button type="button" (click)="Update()" class="btn btn-sm btn-light-primary ms-2">Edit</button>
+  </div>
+</ng-template>
+<div *ngIf="user$ | async as _user" class="card mb-10">
+  <div class="card-body pt-9 pb-0">
+    <div class="d-flex flex-wrap flex-sm-nowrap mb-3">
+      <div class="me-7 mb-4">
+        <div class="
+            symbol symbol-100px symbol-lg-160px symbol-fixed
+            position-relative
+          ">
+          <img [src]="_user.picUrl" alt="Metronic" />
+        </div>
+      </div>
+
+      <div class="flex-grow-1">
+        <div class="
+            d-flex
+            justify-content-between
+            align-items-start
+            flex-wrap
+            mb-2
+          ">
+          <div class="d-flex flex-column">
+            <div class="d-flex align-items-center mb-2">
+              <a class="
+                  text-gray-800 text-hover-primary
+                  fs-2
+                  fw-bolder
+                  me-1
+                  cursor-pointer
+                ">
+                {{ _user.fullname }}
+              </a>
+              <a class="cursor-pointer">
+                <span [inlineSVG]="
+                    './assets/media/icons/duotune/general/gen026.svg'
+                  " class="svg-icon svg-icon-1 svg-icon-primary"></span>
+              </a>
+            </div>
+
+            <div class="d-flex flex-wrap fw-bold fs-6 mb-4 pe-2">
+              <a class="
+                  d-flex
+                  align-items-center
+                  text-gray-400 text-hover-primary
+                  mb-2
+                  cursor-pointer
+                ">
+                <span [inlineSVG]="
+                    './assets/media/icons/duotune/communication/com011.svg'
+                  " class="svg-icon svg-icon-4 me-1"></span>
+                {{ _user.email }}
+              </a>
+            </div>
+          </div>
+
+          <div class="d-flex my-4">
+            <a class="btn btn-sm btn-light me-2 cursor-pointer" id="kt_user_follow_button">
+              <span [inlineSVG]="'./assets/media/icons/duotune/arrows/arr012.svg'"
+                class="svg-icon svg-icon-3 d-none"></span>
+              <span class="indicator-label">Follow</span>
+              <span class="indicator-progress">
+                Please wait...
+                <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+              </span>
+            </a>
+            <!-- <a class="btn btn-sm btn-primary me-3 cursor-pointer" data-bs-toggle="modal"
+              data-bs-target="#kt_modal_offer_a_deal">
+              Hire Me
+            </a>
+            <div class="me-0">
+              <button class="
+                  btn btn-sm btn-icon btn-bg-light btn-active-color-primary
+                " data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end" data-kt-menu-flip="top-end">
+                <i class="bi bi-three-dots fs-3"></i>
+              </button>
+              <app-dropdown-menu1></app-dropdown-menu1>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="user$ | async as _user" style="height: 52vh !important;" class="card" id="kt_profile_details_view">
+  <div class="card-header cursor-pointer">
+    <div class="card-title m-0">
+      <h3 class="fw-bolder m-0">Profile Details</h3>
+    </div>
+
+    <a (click)="openVerticallyCentered(content)" (click)="EditMyProfile(_user.id)"
+      class="btn btn-primary align-self-center">
+      Edit Profile
+    </a>
+  </div>
+
+  <div class="card-body p-9">
+    <div class="row mb-7">
+      <label class="col-lg-4 fw-bold text-muted">Full Name</label>
+
+      <div class="col-lg-8">
+        <span class="fw-bolder fs-6 text-dark">{{ _user.fullname }}</span>
+      </div>
+    </div>
+
+    <div class="row mb-7">
+      <label class="col-lg-4 fw-bold text-muted">User Name</label>
+
+      <div class="col-lg-8 fv-row">
+        <span class="fw-bolder fs-6 text-dark">{{ _user.username }}</span>
+      </div>
+    </div>
+
+    <div class="row mb-7">
+      <label class="col-lg-4 fw-bold text-muted">Email</label>
+
+      <div class="col-lg-8 fv-row">
+        <span class="fw-bold fs-6">{{ _user.email }}</span>
+      </div>
+    </div>
+
+    <div class="row mb-7">
+      <label class="col-lg-4 fw-bold text-muted">
+        Contact Phone
+      </label>
+
+      <div class="col-lg-8 d-flex align-items-center">
+        <span class="fw-bolder fs-6 me-2">0590000000</span>
+      </div>
+    </div>
+
+    <div class="row mb-7">
+      <label class="col-lg-4 fw-bold text-muted">
+        Country
+      </label>
+
+      <div class="col-lg-8">
+        <span class="fw-bolder fs-6 text-dark">Gaza</span>
+      </div>
+    </div>
+
+    <div class="row mb-7">
+      <label class="col-lg-4 fw-bold text-muted">Communication</label>
+
+      <div class="col-lg-8">
+        <span class="fw-bolder fs-6 text-dark">Email, Phone</span>
+      </div>
+    </div>
+  </div>
+</div>
